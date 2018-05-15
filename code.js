@@ -244,9 +244,10 @@ function processImage(item, images, output)
   }
   var imagePrefix = "Image_";
   var imageCounter = images.length;
+  var imageWidth = item.getWidth();
   var name = imagePrefix + imageCounter + extension;
   imageCounter++;
-  output.push('<img src="cid:'+name+'" style="max-width:500px"/>');
+  output.push('<img src="cid:'+name+'" width="'+imageWidth+'"/>');
   images.push( {
     "blob": blob,
     "type": contentType,
