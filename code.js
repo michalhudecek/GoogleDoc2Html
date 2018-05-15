@@ -89,6 +89,7 @@ function processItem(item, listCounters, images) {
   }
   else if (item.getType()===DocumentApp.ElementType.LIST_ITEM) {
     var listItem = item;
+    Logger.log(listItem.getLinkUrl());
     var gt = listItem.getGlyphType();
     var key = listItem.getListId() + '.' + listItem.getNestingLevel();
     var counter = listCounters[key] || 0;
@@ -100,8 +101,6 @@ function processItem(item, listCounters, images) {
           || gt === DocumentApp.GlyphType.HOLLOW_BULLET
           || gt === DocumentApp.GlyphType.SQUARE_BULLET) {
         prefix = '<ul><li>', suffix = "</li>";
-
-          suffix += "</ul>";
         }
       else {
         // Ordered list (<ol>):
@@ -112,7 +111,12 @@ function processItem(item, listCounters, images) {
       prefix = "<li>";
       suffix = "</li>";
     }
-
+    
+    if (listItem.getLinkUrl() != null) {
+      prefix += '<a href="' + listItem.getLinkUrl() + '">';
+      suffix = '</a>' + suffix;
+    }
+    
     if (item.isAtDocumentEnd() || (item.getNextSibling() && (item.getNextSibling().getType() != DocumentApp.ElementType.LIST_ITEM))) {
       if (gt === DocumentApp.GlyphType.BULLET
           || gt === DocumentApp.GlyphType.HOLLOW_BULLET
@@ -165,7 +169,7 @@ function processText(item, output) {
       output.push('<strong>' + text + '</strong>');
     }
     else if(item.isItalic()) {
-      output.push('<blockquote>' + text + '</blockquote>');
+      output.push('<i>' + text + '</i>');
     }
     else if (text.trim().indexOf('http://') == 0) {
       output.push('<a href="' + text + '" rel="nofollow">' + text + '</a>');
@@ -182,7 +186,8 @@ function processText(item, output) {
       var endPos = i+1 < indices.length ? indices[i+1]: text.length;
       var partText = text.substring(startPos, endPos);
 
-      Logger.log(partText);
+      //Logger.log(partText);
+      //Logger.log(partAtts);
 
       if (partAtts.ITALIC) {
         output.push('<i>');
@@ -190,7 +195,7 @@ function processText(item, output) {
       if (partAtts.BOLD) {
         output.push('<strong>');
       }
-      if (partAtts.UNDERLINE) {
+      if (partAtts.UNDERLINE && partAtts.LINK_URL == null) {
         output.push('<u>');
       }
 
@@ -200,8 +205,8 @@ function processText(item, output) {
       if (partText.indexOf('[')==0 && partText[partText.length-1] == ']') {
         output.push('<sup>' + partText + '</sup>');
       }
-      else if (partText.trim().indexOf('http://') == 0) {
-        output.push('<a href="' + partText + '" rel="nofollow">' + partText + '</a>');
+      else if (partAtts.LINK_URL != null) {
+        output.push('<a href="' + partAtts.LINK_URL + '" rel="nofollow">' + partText + '</a>');
       }
       else {
         output.push(partText);
@@ -241,7 +246,7 @@ function processImage(item, images, output)
   var imageCounter = images.length;
   var name = imagePrefix + imageCounter + extension;
   imageCounter++;
-  output.push('<img src="cid:'+name+'" />');
+  output.push('<img src="cid:'+name+'" style="max-width:500px"/>');
   images.push( {
     "blob": blob,
     "type": contentType,
